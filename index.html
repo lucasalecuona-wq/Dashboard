@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Portfolio">
+<title>Portfolio</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0b0f1a;
+    --surface: #131929;
+    --surface2: #1a2235;
+    --border: rgba(255,255,255,0.07);
+    --text: #f0f4ff;
+    --muted: #6b7a99;
+    --hint: #3d4f6e;
+    --green: #34d399;
+    --green-dim: rgba(52,211,153,0.12);
+    --red: #f87171;
+    --red-dim: rgba(248,113,113,0.12);
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.12);
+    --amber: #fbbf24;
+    --purple: #a78bfa;
+    --pink: #f472b6;
+    --teal: #2dd4bf;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
+
+  .app { max-width: 430px; margin: 0 auto; min-height: 100vh; padding-bottom: 32px; }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(180deg, #0f1624 0%, var(--bg) 100%);
+    padding: 52px 20px 20px;
+    position: sticky; top: 0; z-index: 10;
+    border-bottom: 1px solid var(--border);
+  }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; }
+  .header-label { font-size: 9px; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 6px; font-family: 'DM Mono', monospace; }
+  .header-total { font-size: 36px; font-weight: 300; color: var(--text); letter-spacing: -1px; font-family: 'DM Mono', monospace; line-height: 1; }
+  .header-total span { font-size: 20px; color: var(--muted); }
+  .sync-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    padding: 8px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .sync-btn:hover { border-color: rgba(255,255,255,0.15); color: var(--text); }
+  .sync-btn.loading { opacity: 0.5; pointer-events: none; }
+  .sync-icon { display: inline-block; transition: transform 0.6s; }
+  .sync-btn.loading .sync-icon { animation: spin 1s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .badges { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .badge {
+    font-size: 10px; font-weight: 500; padding: 3px 9px;
+    border-radius: 20px; font-family: 'DM Mono', monospace;
+    letter-spacing: 0.3px;
+  }
+  .badge-green { background: var(--green-dim); color: var(--green); }
+  .badge-red { background: var(--red-dim); color: var(--red); }
+  .badge-muted { background: var(--surface2); color: var(--muted); }
+  .last-update { font-size: 9px; color: var(--hint); margin-top: 8px; font-family: 'DM Mono', monospace; }
+
+  /* SECTIONS */
+  .section { padding: 14px 16px 0; }
+
+  /* CARDS GRID */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 14px;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: rgba(255,255,255,0.12); }
+  .card-label { font-size: 9px; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+  .card-value { font-size: 20px; font-weight: 400; font-family: 'DM Mono', monospace; letter-spacing: -0.5px; }
+  .card-sub { font-size: 10px; margin-top: 4px; color: var(--muted); }
+  .v-green { color: var(--green); }
+  .v-red { color: var(--red); }
+  .v-blue { color: var(--blue); }
+  .v-purple { color: var(--purple); }
+  .v-amber { color: var(--amber); }
+
+  /* WIDE CARD */
+  .card-wide {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+  }
+
+  /* CHART */
+  .chart-wrap { position: relative; width: 100%; height: 180px; margin-top: 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+  .leg { display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .leg-sq { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+
+  /* MARKET INDICATORS */
+  .mkts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 10px; }
+  .mkt {
+    background: var(--surface2);
+    border-radius: 12px;
+    padding: 10px 10px;
+  }
+  .mkt-label { font-size: 8px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 5px; font-family: 'DM Mono', monospace; }
+  .mkt-val { font-size: 13px; font-weight: 500; color: var(--text); font-family: 'DM Mono', monospace; }
+  .mkt-chg { font-size: 9px; margin-top: 2px; font-family: 'DM Mono', monospace; }
+
+  /* TOTAL CARD */
+  .total-card {
+    background: var(--surface);
+    border: 1px solid rgba(52,211,153,0.2);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .total-left .card-label { margin-bottom: 6px; }
+  .total-num { font-size: 28px; font-weight: 300; color: var(--green); font-family: 'DM Mono', monospace; letter-spacing: -0.5px; }
+  .total-num span { font-size: 16px; }
+  .total-right { text-align: right; }
+  .total-right .small-label { font-size: 9px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 4px; }
+  .total-right .small-val { font-size: 15px; color: var(--muted); font-family: 'DM Mono', monospace; }
+  .pct-big { font-size: 22px; font-weight: 500; color: var(--green); font-family: 'DM Mono', monospace; margin-top: 4px; }
+
+  /* ERROR */
+  .error-box {
+    background: var(--red-dim);
+    border: 1px solid rgba(248,113,113,0.2);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: var(--red);
+    margin-top: 8px;
+    font-family: 'DM Mono', monospace;
+    display: none;
+  }
+
+  /* SEPARATOR */
+  .sep { height: 1px; background: var(--border); margin: 14px 16px 0; }
+
+  /* AUTH SCREEN */
+  .auth-screen {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 32px; z-index: 100;
+    text-align: center;
+  }
+  .auth-screen.hidden { display: none; }
+  .auth-logo { font-size: 40px; margin-bottom: 24px; }
+  .auth-title { font-size: 22px; font-weight: 300; color: var(--text); margin-bottom: 8px; font-family: 'DM Mono', monospace; }
+  .auth-sub { font-size: 13px; color: var(--muted); margin-bottom: 32px; line-height: 1.6; }
+  .auth-btn {
+    background: white; color: #1a1a2e;
+    border: none; border-radius: 12px;
+    padding: 14px 28px;
+    font-size: 14px; font-weight: 500;
+    cursor: pointer; width: 100%;
+    font-family: 'DM Sans', sans-serif;
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+    transition: opacity 0.2s;
+  }
+  .auth-btn:hover { opacity: 0.9; }
+  .auth-btn svg { width: 20px; height: 20px; }
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div class="auth-screen" id="authScreen">
+  <div class="auth-logo">📊</div>
+  <div class="auth-title">Portfolio</div>
+  <div class="auth-sub">Iniciá sesión con tu cuenta de Google para leer los datos de tu sheet en tiempo real.</div>
+  <button class="auth-btn" onclick="signIn()">
+    <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+    Continuar con Google
+  </button>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="mainApp" style="display:none;">
+
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="header-label">Portfolio</div>
+        <div class="header-total" id="headerTotal"><span>$</span>——</div>
+      </div>
+      <button class="sync-btn" id="syncBtn" onclick="syncData()">
+        <span class="sync-icon" id="syncIcon">↻</span>
+        <span id="syncLabel">SYNC</span>
+      </button>
+    </div>
+    <div class="badges" id="badgeRow">
+      <span class="badge badge-muted" id="badgeDia">—</span>
+      <span class="badge badge-muted" id="badgeMes">—</span>
+      <span class="badge badge-muted" id="badgeYtd">—</span>
+    </div>
+    <div class="last-update" id="lastUpdate">Sin datos — presioná SYNC</div>
+    <div class="error-box" id="errorBox"></div>
+  </div>
+
+  <div class="section">
+    <div class="grid2">
+      <div class="card">
+        <div class="card-label">Invertido</div>
+        <div class="card-value v-blue" id="cardInv">—</div>
+        <div class="card-sub">inversiones activas</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Colchón</div>
+        <div class="card-value v-purple" id="cardCol">—</div>
+        <div class="card-sub">disponible</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:8px;">
+    <div class="card-wide">
+      <div class="card-label">Composición</div>
+      <div class="chart-wrap">
+        <canvas id="compChart" role="img" aria-label="Composición del portfolio por tipo de activo"></canvas>
+      </div>
+      <div class="legend" id="chartLegend"></div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-top:8px;">
+    <div class="card-wide">
+      <div class="card-label">Mercado</div>
+      <div class="mkts">
+        <div class="mkt">
+          <div class="mkt-label">USD MEP</div>
+          <div class="mkt-val" id="mktMep">—</div>
+          <div class="mkt-chg" id="mktMepChg">—</div>
+        </div>
+        <div class="mkt">
+          <div class="mkt-label">USD CCL</div>
+          <div class="mkt-val" id="mktCcl">—</div>
+          <div class="mkt-chg v-green">venta</div>
+        </div>
+        <div class="mkt">
+          <div class="mkt-label">BTC</div>
+          <div class="mkt-val" id="mktBtc">—</div>
+          <div class="mkt-chg" id="mktBtcChg">—</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const SHEET_ID = '1Qs39VW1aNcsL9nKB_Jk0DyfOMZjTpHuFzgnHXvZAWhM';
+const CLIENT_ID = '143260949516-317a58ccqqpmodf18gqcprklk14ap3bh.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
+const RANGE = 'Dashboard!A1:Z100';
+
+let tokenClient, accessToken, chartInstance;
+
+function loadGapi() {
+  return new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'https://apis.google.com/js/api.js';
+    s.onload = () => gapi.load('client', resolve);
+    document.head.appendChild(s);
+  });
+}
+
+function loadGis() {
+  return new Promise(resolve => {
+    const s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.onload = resolve;
+    document.head.appendChild(s);
+  });
+}
+
+async function init() {
+  await Promise.all([loadGapi(), loadGis()]);
+  await gapi.client.init({ discoveryDocs: ['https://sheets.googleapis.com/$discovery/rest?version=v4'] });
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (resp) => {
+      if (resp.error) {
+        // Silent sign-in failed, show auth screen
+        document.getElementById('authScreen').classList.remove('hidden');
+        document.getElementById('mainApp').style.display = 'none';
+        return;
+      }
+      accessToken = resp.access_token;
+      try {
+        const expiry = Date.now() + 55 * 60 * 1000;
+        localStorage.setItem('gtoken', resp.access_token);
+        localStorage.setItem('gtoken_exp', String(expiry));
+      } catch(e) {}
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('mainApp').style.display = 'block';
+      fetchSheetData();
+    }
+  });
+  // Try saved token first
+  try {
+    const saved = localStorage.getItem('gtoken');
+    const exp = parseInt(localStorage.getItem('gtoken_exp') || '0');
+    if (saved && Date.now() < exp) {
+      accessToken = saved;
+      gapi.client.setToken({ access_token: saved });
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('mainApp').style.display = 'block';
+      fetchSheetData();
+      return;
+    }
+  } catch(e) {}
+  // Try silent sign-in (no popup if already authorized)
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function signIn() {
+  if (CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+    useDemoData();
+    return;
+  }
+  tokenClient.requestAccessToken({ prompt: 'select_account' });
+}
+
+function syncData() {
+  if (CLIENT_ID === 'YOUR_GOOGLE_CLIENT_ID') {
+    useDemoData();
+    return;
+  }
+  if (!accessToken) { signIn(); return; }
+  fetchSheetData();
+}
+
+async function fetchSheetData() {
+  setSyncing(true);
+  try {
+    gapi.client.setToken({ access_token: accessToken });
+    const r1 = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Dashboard!C9:G9' });
+    const r2 = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Dashboard!E3:G3' });
+    const r3 = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Dashboard!B16:D19' });
+    const r4 = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'DATA!C10' });
+    const r5 = await gapi.client.sheets.spreadsheets.values.get({ spreadsheetId: SHEET_ID, range: 'Dashboard!E4' });
+
+    const row9 = r1.result.values ? r1.result.values[0] : [];
+    const row3 = r2.result.values ? r2.result.values[0] : [];
+    const assetRows = r3.result.values || [];
+    const btcRaw = r4.result.values ? r4.result.values[0][0] : null;
+    const mepChgRaw = r5.result.values ? r5.result.values[0][0] : null;
+
+    const total = parseFloat((row9[0] || '0').replace(/[$,.]/g,'').replace(',','.'));
+    const investido = parseFloat((row9[1] || '0').replace(/[$,.]/g,'').replace(',','.'));
+    const colchon = total - investido;
+    const dia = parseVal(row9[2]);
+    const mes = parseVal(row9[3]);
+    const ytd = parseVal(row9[4]);
+    const mep = parseFloat((row3[0] || '0').replace(/[$.]/g,'').replace(',','.'));
+    const ccl = parseFloat((row3[2] || '0').replace(/[$.]/g,'').replace(',','.'));
+    const btc = parseFloat((btcRaw || '0').replace(/[$,.]/g,'').replace(',','.'));
+    const mepChg = mepChgRaw ? parseVal(mepChgRaw) : null;
+
+    const assets = assetRows.map(r => ({ label: r[0], usd: parseFloat((r[1]||'0').replace(/[$,.]/g,'').replace(',','.')), pct: parseFloat((r[2]||'0').replace('%','').replace(',','.')) })).filter(a => a.label && a.usd > 0);
+
+    renderDashboard({ total, investido, colchon, dia, mes, ytd, mep, ccl, btc, mepChg, assets });
+    setSyncing(false);
+  } catch(e) {
+    showError('Error al leer el sheet: ' + (e.message || e));
+    setSyncing(false);
+  }
+}
+
+function parseVal(raw) {
+  if (!raw) return 0;
+  return parseFloat(raw.toString().replace('%','').replace(',','.'));
+}
+
+function fmtUsd(n) {
+  if (!n && n !== 0) return '—';
+  return '$' + Math.round(n).toLocaleString('en-US');
+}
+
+function fmtPct(n) {
+  if (!n && n !== 0) return '—';
+  const v = parseFloat(n);
+  return (v >= 0 ? '+' : '') + v.toFixed(2) + '%';
+}
+
+function renderDashboard(d) {
+  document.getElementById('headerTotal').innerHTML = '<span>$</span>' + Math.round(d.total).toLocaleString('en-US');
+  document.getElementById('cardInv').textContent = fmtUsd(d.investido);
+  document.getElementById('cardCol').textContent = fmtUsd(d.colchon);
+
+  const setColor = (id, val) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('v-green','v-red');
+    el.classList.add(parseFloat(val) >= 0 ? 'v-green' : 'v-red');
+  };
+
+  const setBadge = (id, val, label) => {
+    const el = document.getElementById(id);
+    const v = parseFloat(val);
+    el.textContent = (v >= 0 ? '▲ ' : '▼ ') + Math.abs(v).toFixed(2) + '% ' + label;
+    el.className = 'badge ' + (v >= 0 ? 'badge-green' : 'badge-red');
+  };
+  setBadge('badgeDia', d.dia, 'hoy');
+  setBadge('badgeMes', d.mes, 'mes');
+  setBadge('badgeYtd', d.ytd, 'YTD');
+
+  const mepFmt = d.mep ? '$' + Math.round(d.mep).toLocaleString('es-AR') : '—';
+  const cclFmt = d.ccl ? '$' + Math.round(d.ccl).toLocaleString('es-AR') : '—';
+  const btcFmt = d.btc ? '$' + Math.round(d.btc).toLocaleString('en-US') : '—';
+  document.getElementById('mktMep').textContent = mepFmt;
+  const mepChgEl = document.getElementById('mktMepChg');
+  if (d.mepChg != null) {
+    mepChgEl.textContent = fmtPct(d.mepChg);
+    mepChgEl.className = 'mkt-chg ' + (d.mepChg >= 0 ? 'v-green' : 'v-red');
+  } else {
+    mepChgEl.textContent = 'venta';
+    mepChgEl.className = 'mkt-chg v-green';
+  }
+  document.getElementById('mktCcl').textContent = cclFmt;
+  document.getElementById('mktBtc').textContent = btcFmt;
+
+  document.getElementById('lastUpdate').textContent = 'Actualizado ' + new Date().toLocaleTimeString('es-AR', {hour:'2-digit',minute:'2-digit'});
+  document.getElementById('errorBox').style.display = 'none';
+
+  if (d.assets && d.assets.length > 0) renderChart(d.assets);
+}
+
+const COLORS = ['#60a5fa','#34d399','#a78bfa','#f472b6','#fbbf24','#2dd4bf','#f87171'];
+
+function renderChart(assets) {
+  const canvas = document.getElementById('compChart');
+  if (chartInstance) chartInstance.destroy();
+  const colors = assets.map((_, i) => COLORS[i % COLORS.length]);
+  chartInstance = new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels: assets.map(a => a.label),
+      datasets: [{
+        data: assets.map(a => a.pct || Math.round(a.usd)),
+        backgroundColor: colors,
+        borderWidth: 0,
+        hoverOffset: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      cutout: '68%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#1a2235',
+          titleColor: '#6b7a99',
+          bodyColor: '#f0f4ff',
+          padding: 10,
+          callbacks: {
+            label: ctx => ' ' + ctx.label + ': ' + ctx.parsed + '%'
+          }
+        }
+      }
+    }
+  });
+  const legend = document.getElementById('chartLegend');
+  legend.innerHTML = assets.map((a, i) =>
+    `<span class="leg"><span class="leg-sq" style="background:${colors[i]};"></span>${a.label} ${a.pct ? a.pct + '%' : ''}</span>`
+  ).join('');
+}
+
+function setSyncing(on) {
+  const btn = document.getElementById('syncBtn');
+  const icon = document.getElementById('syncIcon');
+  const label = document.getElementById('syncLabel');
+  btn.classList.toggle('loading', on);
+  label.textContent = on ? '...' : 'SYNC';
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorBox');
+  el.textContent = '⚠ ' + msg;
+  el.style.display = 'block';
+}
+
+function useDemoData() {
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('mainApp').style.display = 'block';
+  setSyncing(true);
+  setTimeout(() => {
+    renderDashboard({
+      total: 86783,
+      investido: 77116,
+      colchon: 9667,
+      dia: 0.04,
+      mes: 3.34,
+      ytd: 4.25,
+      mep: 1415.50,
+      ccl: 1459.50,
+      btc: 75353,
+      mepChg: -0.8,
+      assets: [
+        { label: 'Bonos / ON', usd: 38913, pct: 50 },
+        { label: 'Acciones', usd: 26386, pct: 34 },
+        { label: 'PF / Fondos', usd: 7774, pct: 10 },
+        { label: 'Cripto', usd: 4042, pct: 5 },
+      ]
+    });
+    setSyncing(false);
+  }, 800);
+}
+
+init().catch(() => {
+  document.getElementById('authScreen').querySelector('.auth-sub').textContent =
+    'Modo demo activo. Para conectar con tu sheet real, configurá tu Google Client ID en el archivo.';
+});
+</script>
+</body>
+</html>
